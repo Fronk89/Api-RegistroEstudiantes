@@ -153,6 +153,67 @@ namespace ApiPrueba.Controllers
             }
         }
 
+        [HttpGet("ObtenerEstudiante/{id}")]
+        public async Task<IActionResult> ObtenerEstudiante(int id)
+        {
+            try
+            {
+                var resultados = new List<object>();
+
+                using (var connection = _context.Database.GetDbConnection())
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "ObtenerEstudiante"; // Procedimiento almacenado
+                        command.CommandType = CommandType.StoredProcedure;
+
+                        // Añadir el parámetro del ID del alumno
+                        var parameter = new SqlParameter("@AlumnoId", SqlDbType.Int) { Value = id };
+                        command.Parameters.Add(parameter);
+
+                        // Ejecutar el procedimiento y leer los resultados
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var resultado = new
+                                {
+                                    AlumnoId = reader["AlumnoId"],
+                                    NombreAlumno = reader["NombreAlumno"],
+                                    ApellidoAlumno = reader["ApellidoAlumno"],
+                                    Nacimiento = reader["Nacimiento"],
+                                    Sexo = reader["Sexo"],
+                                    TelefonoPadres = reader["TelefonoPadres"],
+                                    CursoId = reader["CursoId"],
+                                    NombreCurso = reader["NombreCurso"],
+                                    MaestroId = reader["MaestroId"],
+                                    NombreMaestro = reader["NombreMaestro"],
+                                    ApellidoMaestro = reader["ApellidoMaestro"]
+                                };
+                                resultados.Add(resultado);
+                            }
+                        }
+                    }
+                }
+
+                // Si no hay resultados, se responde con un mensaje
+                if (resultados.Count == 0)
+                {
+                    return NotFound(new { message = "Estudiante no encontrado." });
+                }
+
+                // Devolver los resultados encontrados
+                return Ok(resultados);
+            }
+            catch (Exception ex)
+            {
+                // Manejo de excepciones
+                return StatusCode(500, new { message = "Error al obtener el estudiante.", error = ex.Message });
+            }
+        }
+
     }
 }
     
